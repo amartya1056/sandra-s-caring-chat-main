@@ -1,0 +1,141 @@
+@import "tailwindcss" source(none);
+@source "../src";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-cream: var(--cream);
+  --color-deep-green: var(--deep-green);
+  --color-gold: var(--gold);
+  --color-orange-availability: var(--orange-availability);
+  --color-tag-blue: var(--tag-blue);
+  --color-tag-blue-foreground: var(--tag-blue-foreground);
+  --color-glass-border: var(--glass-border);
+  --font-display: "Fraunces", ui-serif, Georgia, serif;
+}
+
+:root {
+  --radius: 1.25rem;
+
+  /* Brand palette */
+  --forest-1: #2C4334;
+  --forest-2: #37553F;
+  --cream: oklch(0.95 0.04 95);          /* #F3F0E0 */
+  --deep-green: oklch(0.36 0.05 152);    /* #2F4A3D */
+  --gold: oklch(0.82 0.16 85);           /* #F6C544 */
+  --orange-availability: oklch(0.7 0.18 45); /* #E8732A */
+  --tag-blue: oklch(0.92 0.04 230);
+  --tag-blue-foreground: oklch(0.32 0.08 240);
+
+  /* Semantic (mapped to brand) */
+  --background: oklch(0.32 0.03 150);
+  --foreground: oklch(0.95 0.04 95);
+  --card: oklch(1 0 0 / 14%);
+  --card-foreground: oklch(0.95 0.04 95);
+  --popover: oklch(1 0 0 / 14%);
+  --popover-foreground: oklch(0.95 0.04 95);
+  --primary: oklch(0.36 0.05 152);
+  --primary-foreground: oklch(0.95 0.04 95);
+  --secondary: oklch(1 0 0 / 12%);
+  --secondary-foreground: oklch(0.95 0.04 95);
+  --muted: oklch(1 0 0 / 10%);
+  --muted-foreground: oklch(0.85 0.02 95);
+  --accent: oklch(0.7 0.18 45);
+  --accent-foreground: oklch(0.18 0.02 150);
+  --destructive: oklch(0.6 0.22 27);
+  --destructive-foreground: oklch(0.98 0 0);
+  --border: oklch(1 0 0 / 18%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.7 0.18 45);
+  --glass-border: rgba(255, 255, 255, 0.25);
+}
+
+@layer base {
+  * {
+    border-color: var(--color-border);
+  }
+  html, body, #root {
+    min-height: 100%;
+  }
+  body {
+    color: var(--color-foreground);
+    background-color: var(--forest-1);
+    background-image:
+      radial-gradient(1200px 800px at 80% -10%, color-mix(in oklab, var(--forest-2) 80%, transparent), transparent 60%),
+      radial-gradient(900px 700px at -10% 110%, color-mix(in oklab, var(--forest-2) 70%, transparent), transparent 60%),
+      url("/src/assets/bg-waves.jpg");
+    background-size: auto, auto, cover;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    background-position: center;
+    font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  }
+  h1, h2, h3, .font-display { font-family: var(--font-display); letter-spacing: -0.02em; }
+}
+
+@utility glass {
+  background: rgba(255, 255, 255, 0.13);
+  backdrop-filter: blur(22px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 1.25rem;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.35);
+}
+@utility glass-strong {
+  background: rgba(255, 255, 255, 0.17);
+  backdrop-filter: blur(24px) saturate(150%);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 1.5rem;
+  box-shadow: 0 20px 60px -20px rgba(0, 0, 0, 0.45);
+}
+@utility glass-subtle {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(18px) saturate(130%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+}
+
+@keyframes orb-pulse {
+  0%, 100% { transform: scale(1); opacity: 0.95; }
+  50% { transform: scale(1.08); opacity: 1; }
+}
+@keyframes orb-rotate {
+  to { transform: rotate(360deg); }
+}
+@keyframes wave-bar {
+  0%, 100% { transform: scaleY(0.3); }
+  50% { transform: scaleY(1); }
+}
+@keyframes launcher-pulse {
+  0%, 100% { box-shadow: 0 10px 30px -8px rgba(0,0,0,0.5), 0 0 0 0 rgba(246,197,68,0.4); }
+  50% { box-shadow: 0 10px 30px -8px rgba(0,0,0,0.5), 0 0 0 14px rgba(246,197,68,0); }
+}
+@keyframes pop-in {
+  from { transform: translate(-50%, -50%) scale(0.9); opacity: 0; }
+  to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
