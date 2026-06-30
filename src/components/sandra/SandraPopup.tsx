@@ -237,8 +237,10 @@ export function SandraPopup({ open, onClose }: { open: boolean; onClose: () => v
       aria-label="Sandra assistant"
       className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2"
       style={{
-        width: "clamp(340px, 64vw, 880px)",
-        height: "clamp(440px, 78vh, 600px)",
+        // Cap at 94vw so the dialog never overflows narrow phones (<340px wide),
+        // while keeping the original clamp sizing on larger screens.
+        width: "min(94vw, clamp(340px, 64vw, 880px))",
+        height: "min(88vh, clamp(440px, 78vh, 600px))",
         animation: "pop-in 220ms ease-out",
       }}
     >

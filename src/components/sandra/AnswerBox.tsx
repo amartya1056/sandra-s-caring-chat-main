@@ -2,6 +2,12 @@ import { Mic, ArrowRight, Check } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { collapseRepeats } from "@/lib/dedupe";
 
+// Inline version of the mic-button icon, used inside placeholder/hint text in
+// place of the old 🗣️ emoji so it reads as the same icon as the mic button.
+const MicGlyph = () => (
+  <Mic className="mx-0.5 inline h-3.5 w-3.5 align-[-0.2em]" aria-hidden="true" />
+);
+
 type Lang = "en" | "hi";
 
 type Props = {
@@ -30,18 +36,23 @@ export function AnswerBox({ lang, isLast, onSubmit }: Props) {
   const rafRef = useRef<number | null>(null);
   const supportsSpeech = !!getSpeechRecognition();
 
-  const placeholder =
-    lang === "en"
-      ? "Type or tap 🗣️ to speak, then press Enter or Next"
-      : "टाइप करें या 🗣️ दबाकर बोलें, फिर Enter या Next दबाएँ";
+  const placeholderNode =
+    lang === "en" ? (
+      <>Type or tap <MicGlyph /> to speak, then press Enter or Next</>
+    ) : (
+      <>टाइप करें या <MicGlyph /> दबाकर बोलें, फिर Enter या Next दबाएँ</>
+    );
+  const inputAria = lang === "en" ? "Type your answer" : "अपना उत्तर लिखें";
   const emptyMsg =
     lang === "en"
       ? "Please type or speak an answer first."
       : "कृपया पहले अपना उत्तर टाइप करें या बोलें।";
-  const listenHint =
-    lang === "en"
-      ? "Listening… speak now (tap 🗣️ to stop)."
-      : "सुन रहा हूँ… अब बोलें (रोकने के लिए 🗣️ दबाएँ)।";
+  const listenHintNode =
+    lang === "en" ? (
+      <>Listening… speak now (tap <MicGlyph /> to stop).</>
+    ) : (
+      <>सुन रहा हूँ… अब बोलें (रोकने के लिए <MicGlyph /> दबाएँ)।</>
+    );
   const fallbackMsg =
     lang === "en"
       ? "Live voice needs Chrome or Edge. You can still type your answer."
@@ -143,7 +154,7 @@ export function AnswerBox({ lang, isLast, onSubmit }: Props) {
     r.onend = () => { setListening(false); teardownAudio(); };
     recogRef.current = r;
     setListening(true);
-    setHint(listenHint);
+    setHint("");
     try { r.start(); } catch { setListening(false); }
     void startMicVisualizer();
   };
@@ -183,17 +194,24 @@ export function AnswerBox({ lang, isLast, onSubmit }: Props) {
               ))}
             </div>
           ) : (
-            <input
-              value={text}
-              onChange={(e) => {
-                setText(e.target.value);
-                methodRef.current = "typed";
-                if (hint) setHint("");
-              }}
-              onKeyDown={onKey}
-              placeholder={placeholder}
-              className="h-10 w-full bg-transparent pl-4 pr-12 text-neutral-900 placeholder:text-neutral-500 outline-none"
-            />
+            <div className="relative w-full">
+              <input
+                value={text}
+                onChange={(e) => {
+                  setText(e.target.value);
+                  methodRef.current = "typed";
+                  if (hint) setHint("");
+                }}
+                onKeyDown={onKey}
+                aria-label={inputAria}
+                className="h-10 w-full bg-transparent pl-4 pr-12 text-neutral-900 outline-none"
+              />
+              {!text && (
+                <div className="pointer-events-none absolute inset-0 flex items-center pl-4 pr-12 text-sm text-neutral-500">
+                  <span className="truncate">{placeholderNode}</span>
+                </div>
+              )}
+            </div>
           )}
           {supportsSpeech && (
             <button
@@ -219,7 +237,9 @@ export function AnswerBox({ lang, isLast, onSubmit }: Props) {
           {isLast ? <Check className="h-4 w-4" /> : <ArrowRight className="h-4 w-4" />}
         </button>
       </div>
-      <p className="px-2 text-[11px] text-cream/70 min-h-[14px]">{hint}</p>
+      <p className="px-2 text-[11px] text-cream/70 min-h-[14px]">
+        {listening ? listenHintNode : hint}
+      </p>
     </div>
   );
 }
