@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from "vite";
 import { tanstackStart } from "@tanstack/react-start/plugin/vite";
+import { nitro } from "nitro/vite";
 import viteReact from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import tsConfigPaths from "vite-tsconfig-paths";
@@ -22,6 +23,10 @@ export default defineConfig(({ mode }) => {
         // default, set explicitly for clarity; nitro/vite builds from it.
         server: { entry: "server" },
       }),
+      // Packages the SSR build for deployment. Nitro auto-detects the host from
+      // the build environment (e.g. it selects the Vercel preset and emits
+      // .vercel/output when VERCEL=1 is set, and a Node server locally).
+      nitro({ compatibilityDate: "2025-06-01" }),
       viteReact(),
     ],
   };
