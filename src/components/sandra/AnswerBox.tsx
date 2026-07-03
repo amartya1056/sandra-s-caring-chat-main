@@ -34,6 +34,9 @@ export function AnswerBox({ lang, isLast, onSubmit }: Props) {
   const analyserRef = useRef<AnalyserNode | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number | null>(null);
+  // When the user taps the mic again to stop, we auto-send the spoken answer.
+  const submitOnEndRef = useRef(false);
+  const latestTranscriptRef = useRef("");
   const supportsSpeech = !!getSpeechRecognition();
 
   const placeholderNode =
@@ -126,14 +129,29 @@ export function AnswerBox({ lang, isLast, onSubmit }: Props) {
     setListening(false);
   };
 
+  const submitValue = (raw: string, method: "typed" | "voice") => {
+    const value = raw.trim();
+    if (!value) {
+      setHint(emptyMsg);
+      return;
+    }
+    onSubmit(value, method);
+    setText("");
+    methodRef.current = "typed";
+    setHint("");
+  };
+
   const toggleMic = () => {
     if (listening) {
+      // Tap the mic again → stop recording and send the spoken answer to the AI.
+      submitOnEndRef.current = true;
       stopListening();
       return;
     }
     const SR = getSpeechRecognition();
     if (!SR) return;
     setText("");
+    latestTranscriptRef.current = "";
     methodRef.current = "voice";
     const r = new SR();
     r.lang = lang === "en" ? "en-US" : "hi-IN";
@@ -148,10 +166,19 @@ export function AnswerBox({ lang, isLast, onSubmit }: Props) {
         else interim += " " + tr;
       }
       const merged = collapseRepeats((finalText + " " + interim).trim());
+      latestTranscriptRef.current = merged;
       setText(merged);
     };
-    r.onerror = () => { stopListening(); };
-    r.onend = () => { setListening(false); teardownAudio(); };
+    r.onerror = () => { submitOnEndRef.current = false; stopListening(); };
+    r.onend = () => {
+      setListening(false);
+      teardownAudio();
+      if (submitOnEndRef.current) {
+        submitOnEndRef.current = false;
+        // Send the recognized answer once recognition has fully ended.
+        submitValue(latestTranscriptRef.current, "voice");
+      }
+    };
     recogRef.current = r;
     setListening(true);
     setHint("");
@@ -160,16 +187,13 @@ export function AnswerBox({ lang, isLast, onSubmit }: Props) {
   };
 
   const submit = () => {
-    const value = text.trim();
-    if (!value) {
-      setHint(emptyMsg);
-      return;
+    if (listening) {
+      // Pressing Next while recording stops the mic but skips its auto-submit,
+      // then sends the current transcript here instead (avoids a double send).
+      submitOnEndRef.current = false;
+      stopListening();
     }
-    if (listening) stopListening();
-    onSubmit(value, methodRef.current);
-    setText("");
-    methodRef.current = "typed";
-    setHint("");
+    submitValue(text, methodRef.current);
   };
 
   const onKey = (e: React.KeyboardEvent<HTMLInputElement>) => {

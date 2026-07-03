@@ -84,6 +84,16 @@ export function SandraPopup({ open, onClose }: { open: boolean; onClose: () => v
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
 
+  // Lock background scroll while the full-screen chat is open.
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [open]);
+
   // autoscroll
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -235,18 +245,17 @@ export function SandraPopup({ open, onClose }: { open: boolean; onClose: () => v
       role="dialog"
       aria-modal="true"
       aria-label="Sandra assistant"
-      className="fixed left-1/2 top-1/2 z-50 -translate-x-1/2 -translate-y-1/2"
-      style={{
-        // Cap at 94vw so the dialog never overflows narrow phones (<340px wide),
-        // while keeping the original clamp sizing on larger screens.
-        width: "min(94vw, clamp(340px, 64vw, 880px))",
-        height: "min(88vh, clamp(440px, 78vh, 600px))",
-        animation: "pop-in 220ms ease-out",
-      }}
+      className="fixed inset-0 z-50"
+      style={{ animation: "sheet-up 240ms ease-out" }}
     >
-      <div className="glass-strong flex h-full w-full flex-col overflow-hidden">
+      {/* Full-screen panel; corners/border removed since it spans the viewport. */}
+      <div
+        className="glass-strong flex h-full w-full flex-col overflow-hidden"
+        style={{ borderRadius: 0, border: "none" }}
+      >
         {/* Header */}
-        <header className="flex items-center gap-3 border-b border-white/15 bg-white/5 px-5 py-3">
+        <header className="border-b border-white/15 bg-white/5 px-5 py-3">
+          <div className="mx-auto flex w-full max-w-4xl items-center gap-3">
           <div className="relative">
             <img
               src={sandraAvatar}
@@ -286,10 +295,12 @@ export function SandraPopup({ open, onClose }: { open: boolean; onClose: () => v
           >
             <X className="h-4 w-4" />
           </button>
+          </div>
         </header>
 
         {/* Body */}
-        <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-4 space-y-3">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-5 py-4">
+          <div className="mx-auto w-full max-w-4xl space-y-3">
           {bubbles.map((b, i) =>
             b.kind === "assistant" ? (
               <div key={i} className="flex items-start gap-2">
@@ -349,16 +360,19 @@ export function SandraPopup({ open, onClose }: { open: boolean; onClose: () => v
               </div>
             ),
           )}
+          </div>
         </div>
 
         {/* Footer / answer */}
         {!done && (
           <footer className="border-t border-white/15 bg-white/5 px-5 py-3">
-            <AnswerBox
-              lang={lang}
-              isLast={index === totalQs - 1}
-              onSubmit={handleSubmit}
-            />
+            <div className="mx-auto w-full max-w-4xl">
+              <AnswerBox
+                lang={lang}
+                isLast={index === totalQs - 1}
+                onSubmit={handleSubmit}
+              />
+            </div>
           </footer>
         )}
       </div>

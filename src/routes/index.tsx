@@ -1,12 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
 import { Nav } from "@/components/site/Nav";
 import { Hero } from "@/components/site/Hero";
 import { ExpertSearch } from "@/components/site/ExpertSearch";
 import { ExpertGrid } from "@/components/site/ExpertGrid";
-import { FloatingFabs } from "@/components/site/FloatingFabs";
-import { SandraLauncher } from "@/components/sandra/SandraLauncher";
-import { SandraPopup } from "@/components/sandra/SandraPopup";
+import { MentalHealthCheck } from "@/components/site/MentalHealthCheck";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -28,16 +25,13 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const [open, setOpen] = useState(false);
   return (
     <main className="relative min-h-screen">
       <Nav />
       <Hero />
       <ExpertSearch />
       <ExpertGrid />
-      <SandraLauncher onOpen={() => setOpen(true)} />
-      <FloatingFabs onChatClick={() => setOpen(true)} />
-      <SandraPopup open={open} onClose={() => setOpen(false)} />
+      <MentalHealthCheck />
     </main>
   );
 }

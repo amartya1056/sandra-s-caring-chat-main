@@ -7,9 +7,12 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
+import { SandraLauncher } from "@/components/sandra/SandraLauncher";
+import { FloatingFabs } from "@/components/site/FloatingFabs";
+import { SandraPopup } from "@/components/sandra/SandraPopup";
 
 function NotFoundComponent() {
   return (
@@ -112,11 +115,16 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  // Sandra chat is available on every page (launcher + floating buttons + popup).
+  const [chatOpen, setChatOpen] = useState(false);
 
   return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
+      <SandraLauncher onOpen={() => setChatOpen(true)} />
+      <FloatingFabs onChatClick={() => setChatOpen(true)} />
+      <SandraPopup open={chatOpen} onClose={() => setChatOpen(false)} />
     </QueryClientProvider>
   );
 }

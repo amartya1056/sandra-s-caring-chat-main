@@ -10,12 +10,18 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as CheckTypeRouteImport } from './routes/check/$type'
 import { Route as ApiGroqTtsRouteImport } from './routes/api/groq/tts'
 import { Route as ApiGroqCleanupRouteImport } from './routes/api/groq/cleanup'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckTypeRoute = CheckTypeRouteImport.update({
+  id: '/check/$type',
+  path: '/check/$type',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiGroqTtsRoute = ApiGroqTtsRouteImport.update({
@@ -31,30 +37,34 @@ const ApiGroqCleanupRoute = ApiGroqCleanupRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/check/$type': typeof CheckTypeRoute
   '/api/groq/cleanup': typeof ApiGroqCleanupRoute
   '/api/groq/tts': typeof ApiGroqTtsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/check/$type': typeof CheckTypeRoute
   '/api/groq/cleanup': typeof ApiGroqCleanupRoute
   '/api/groq/tts': typeof ApiGroqTtsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/check/$type': typeof CheckTypeRoute
   '/api/groq/cleanup': typeof ApiGroqCleanupRoute
   '/api/groq/tts': typeof ApiGroqTtsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/api/groq/cleanup' | '/api/groq/tts'
+  fullPaths: '/' | '/check/$type' | '/api/groq/cleanup' | '/api/groq/tts'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/api/groq/cleanup' | '/api/groq/tts'
-  id: '__root__' | '/' | '/api/groq/cleanup' | '/api/groq/tts'
+  to: '/' | '/check/$type' | '/api/groq/cleanup' | '/api/groq/tts'
+  id: '__root__' | '/' | '/check/$type' | '/api/groq/cleanup' | '/api/groq/tts'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  CheckTypeRoute: typeof CheckTypeRoute
   ApiGroqCleanupRoute: typeof ApiGroqCleanupRoute
   ApiGroqTtsRoute: typeof ApiGroqTtsRoute
 }
@@ -66,6 +76,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/check/$type': {
+      id: '/check/$type'
+      path: '/check/$type'
+      fullPath: '/check/$type'
+      preLoaderRoute: typeof CheckTypeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/groq/tts': {
@@ -87,6 +104,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  CheckTypeRoute: CheckTypeRoute,
   ApiGroqCleanupRoute: ApiGroqCleanupRoute,
   ApiGroqTtsRoute: ApiGroqTtsRoute,
 }
