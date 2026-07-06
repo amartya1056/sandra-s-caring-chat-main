@@ -1,5 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   ArrowRight,
   ChevronDown,
@@ -18,6 +18,7 @@ import {
 } from "@/lib/assessments";
 import { Gauge } from "@/components/site/Gauge";
 import { VoiceAnswer } from "@/components/site/VoiceAnswer";
+import { speak, stopSpeaking } from "@/lib/speak";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/check/$type")({
@@ -43,6 +44,7 @@ const UI: Record<
     resultLabel: (t: string) => string;
     score: string;
     recorded: string;
+    notRecorded: string;
     expert: string;
     retake: string;
     severity: Record<Severity, string>;
@@ -60,6 +62,8 @@ const UI: Record<
     score: "Score",
     recorded:
       "Your responses have been recorded. This screening is for awareness only and is not a medical diagnosis. For a professional evaluation, please connect with one of our experts.",
+    notRecorded:
+      "This screening is for awareness only and is not a medical diagnosis. For a professional evaluation, please connect with one of our experts.",
     expert: "Talk to an expert",
     retake: "Retake test",
     severity: { Minimal: "Minimal", Mild: "Mild", Moderate: "Moderate", Severe: "Severe" },
@@ -76,9 +80,48 @@ const UI: Record<
     score: "स्कोर",
     recorded:
       "आपके उत्तर दर्ज कर लिए गए हैं। यह स्क्रीनिंग केवल जागरूकता के लिए है और चिकित्सीय निदान नहीं है। पेशेवर मूल्यांकन के लिए कृपया हमारे किसी विशेषज्ञ से संपर्क करें।",
+    notRecorded:
+      "यह स्क्रीनिंग केवल जागरूकता के लिए है और चिकित्सीय निदान नहीं है। पेशेवर मूल्यांकन के लिए कृपया हमारे किसी विशेषज्ञ से संपर्क करें।",
     expert: "विशेषज्ञ से बात करें",
     retake: "दोबारा टेस्ट लें",
     severity: { Minimal: "न्यूनतम", Mild: "हल्का", Moderate: "मध्यम", Severe: "गंभीर" },
+  },
+};
+
+const DISCLAIMER: Record<Lang, { heading: string; body: string; yes: string; no: string }> = {
+  en: {
+    heading: "Before you begin",
+    body: "Please note: your responses to this assessment, including every question and the answer you give, will be recorded and stored so we can generate your report and improve our services. Do you want to continue?",
+    yes: "Yes, I agree",
+    no: "No",
+  },
+  hi: {
+    heading: "शुरू करने से पहले",
+    body: "कृपया ध्यान दें: इस आकलन में आपके सभी उत्तर, यानी हर प्रश्न और आपका दिया गया उत्तर, रिकॉर्ड और सुरक्षित किए जाएँगे ताकि हम आपकी रिपोर्ट बना सकें और अपनी सेवाएँ बेहतर बना सकें। क्या आप जारी रखना चाहते हैं?",
+    yes: "हाँ, मैं सहमत हूँ",
+    no: "नहीं",
+  },
+};
+
+const METHOD: Record<
+  Lang,
+  { heading: string; sub: string; options: string; optionsSub: string; voice: string; voiceSub: string }
+> = {
+  en: {
+    heading: "How would you like to answer?",
+    sub: "Choose how you'd like to respond. You can switch anytime during the test.",
+    options: "Tap the options",
+    optionsSub: "Select an answer with a click",
+    voice: "Use my voice",
+    voiceSub: "Speak your answer aloud",
+  },
+  hi: {
+    heading: "आप कैसे उत्तर देना चाहेंगे?",
+    sub: "चुनें कि आप कैसे उत्तर देना चाहते हैं। आप टेस्ट के दौरान कभी भी बदल सकते हैं।",
+    options: "विकल्प चुनें",
+    optionsSub: "क्लिक करके उत्तर चुनें",
+    voice: "आवाज़ का उपयोग करें",
+    voiceSub: "अपना उत्तर बोलकर दें",
   },
 };
 
@@ -134,38 +177,63 @@ function LangToggle({ lang, onChange }: { lang: Lang; onChange: (l: Lang) => voi
 function Modal({ children }: { children: ReactNode }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-deep-green/40 p-4 backdrop-blur-sm">
-      <div className="w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl">{children}</div>
+      <div className="relative w-full max-w-md rounded-3xl bg-white p-7 shadow-2xl">{children}</div>
     </div>
   );
 }
 
-function DisclaimerModal({ onYes, onNo }: { onYes: () => void; onNo: () => void }) {
+function DisclaimerModal({
+  lang,
+  onToggleLang,
+  onYes,
+  onNo,
+}: {
+  lang: Lang;
+  onToggleLang: () => void;
+  onYes: () => void;
+  onNo: () => void;
+}) {
+  const c = DISCLAIMER[lang];
+
+  // Read the disclaimer aloud automatically when it appears, and again whenever
+  // the language is toggled. Stop any speech when the box is dismissed.
+  useEffect(() => {
+    void speak(`${c.heading}. ${c.body}`, lang);
+    return () => stopSpeaking();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lang]);
+
   return (
     <Modal>
+      <button
+        type="button"
+        onClick={onToggleLang}
+        aria-label="Toggle language"
+        title={lang === "en" ? "हिन्दी में सुनें" : "Listen in English"}
+        className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full border border-deep-green/25 bg-deep-green/5 text-[11px] font-bold text-deep-green transition hover:bg-deep-green/10"
+      >
+        {lang === "en" ? "हि" : "EN"}
+      </button>
       <div className="flex flex-col items-center text-center">
         <span className="grid h-12 w-12 place-items-center rounded-full bg-deep-green/10 text-deep-green">
           <ShieldCheck className="h-6 w-6" />
         </span>
-        <h2 className="mt-4 font-display text-2xl font-bold text-deep-green">Before you begin</h2>
-        <p className="mt-3 text-sm leading-relaxed text-deep-green/70">
-          Please note: your responses to this assessment — every question and the answer you
-          give — will be recorded and stored so we can generate your report and improve our
-          services. Do you want to continue?
-        </p>
+        <h2 className="mt-4 font-display text-2xl font-bold text-deep-green">{c.heading}</h2>
+        <p className="mt-3 text-sm leading-relaxed text-deep-green/70">{c.body}</p>
         <div className="mt-6 flex w-full flex-col gap-2 sm:flex-row">
           <button
             type="button"
             onClick={onYes}
             className="flex-1 rounded-full bg-deep-green px-5 py-3 text-sm font-semibold text-cream transition hover:brightness-110"
           >
-            Yes, I agree — continue
+            {c.yes}
           </button>
           <button
             type="button"
             onClick={onNo}
             className="flex-1 rounded-full border border-deep-green/25 px-5 py-3 text-sm font-semibold text-deep-green transition hover:bg-deep-green/5"
           >
-            No, take me home
+            {c.no}
           </button>
         </div>
       </div>
@@ -173,16 +241,13 @@ function DisclaimerModal({ onYes, onNo }: { onYes: () => void; onNo: () => void 
   );
 }
 
-function MethodModal({ onPick }: { onPick: (m: Mode) => void }) {
+function MethodModal({ lang, onPick }: { lang: Lang; onPick: (m: Mode) => void }) {
+  const c = METHOD[lang];
   return (
     <Modal>
       <div className="text-center">
-        <h2 className="font-display text-2xl font-bold text-deep-green">
-          How would you like to answer?
-        </h2>
-        <p className="mt-2 text-sm text-deep-green/70">
-          Choose how you&apos;d like to respond. You can switch anytime during the test.
-        </p>
+        <h2 className="font-display text-2xl font-bold text-deep-green">{c.heading}</h2>
+        <p className="mt-2 text-sm text-deep-green/70">{c.sub}</p>
         <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
           <button
             type="button"
@@ -192,8 +257,8 @@ function MethodModal({ onPick }: { onPick: (m: Mode) => void }) {
             <span className="grid h-12 w-12 place-items-center rounded-full bg-deep-green/10 text-deep-green">
               <MousePointerClick className="h-6 w-6" />
             </span>
-            <span className="font-semibold text-deep-green">Tap the options</span>
-            <span className="text-xs text-deep-green/60">Select an answer with a click</span>
+            <span className="font-semibold text-deep-green">{c.options}</span>
+            <span className="text-xs text-deep-green/60">{c.optionsSub}</span>
           </button>
           <button
             type="button"
@@ -203,8 +268,8 @@ function MethodModal({ onPick }: { onPick: (m: Mode) => void }) {
             <span className="grid h-12 w-12 place-items-center rounded-full bg-deep-green/10 text-deep-green">
               <Mic className="h-6 w-6" />
             </span>
-            <span className="font-semibold text-deep-green">Use my voice</span>
-            <span className="text-xs text-deep-green/60">Speak your answer aloud</span>
+            <span className="font-semibold text-deep-green">{c.voice}</span>
+            <span className="text-xs text-deep-green/60">{c.voiceSub}</span>
           </button>
         </div>
       </div>
@@ -217,11 +282,13 @@ function Quiz({
   mode,
   onModeChange,
   lang,
+  store,
 }: {
   assessment: Assessment;
   mode: Mode;
   onModeChange: (m: Mode) => void;
   lang: Lang;
+  store: boolean;
 }) {
   const t = UI[lang];
   const questions = assessment.questions[lang];
@@ -250,6 +317,8 @@ function Quiz({
   };
 
   const persist = async () => {
+    // Only store responses if the user agreed on the disclaimer ("Yes").
+    if (!store) return;
     try {
       const responses = assessment.questions.en.map((q, i) => ({
         question: q,
@@ -302,7 +371,9 @@ function Quiz({
         <p className="mt-1 text-deep-green/70">
           {t.score} {score} / {maxScore}
         </p>
-        <p className="mx-auto mt-3 max-w-md text-sm text-deep-green/70">{t.recorded}</p>
+        <p className="mx-auto mt-3 max-w-md text-sm text-deep-green/70">
+          {store ? t.recorded : t.notRecorded}
+        </p>
         <div className="mt-6 flex flex-wrap justify-center gap-3">
           <Link
             to="/"
@@ -428,10 +499,10 @@ function Quiz({
 function AssessmentPage() {
   const { type } = Route.useParams();
   const assessment = getAssessment(type);
-  const navigate = useNavigate();
 
   const [lang, setLang] = useState<Lang>("en");
-  const [consented, setConsented] = useState(false);
+  const [proceeded, setProceeded] = useState(false);
+  const [store, setStore] = useState(true);
   const [mode, setMode] = useState<Mode | null>(null);
 
   if (!assessment) {
@@ -466,17 +537,29 @@ function AssessmentPage() {
           <LangToggle lang={lang} onChange={setLang} />
         </div>
 
-        {consented && mode ? (
-          <Quiz assessment={assessment} mode={mode} onModeChange={setMode} lang={lang} />
+        {proceeded && mode ? (
+          <Quiz assessment={assessment} mode={mode} onModeChange={setMode} lang={lang} store={store} />
         ) : (
           <div className="mt-8 h-52 rounded-3xl border border-deep-green/10 bg-[#faf9e8]" />
         )}
       </main>
 
-      {!consented && (
-        <DisclaimerModal onYes={() => setConsented(true)} onNo={() => navigate({ to: "/" })} />
+      {!proceeded && (
+        <DisclaimerModal
+          lang={lang}
+          onToggleLang={() => setLang((l) => (l === "en" ? "hi" : "en"))}
+          onYes={() => {
+            setStore(true);
+            setProceeded(true);
+          }}
+          onNo={() => {
+            // "No" declines data storage but still lets the user take the test.
+            setStore(false);
+            setProceeded(true);
+          }}
+        />
       )}
-      {consented && !mode && <MethodModal onPick={setMode} />}
+      {proceeded && !mode && <MethodModal lang={lang} onPick={setMode} />}
     </div>
   );
 }
