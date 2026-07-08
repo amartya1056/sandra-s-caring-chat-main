@@ -3,11 +3,13 @@ import { useEffect, useState, type ReactNode } from "react";
 import {
   ArrowRight,
   ChevronDown,
+  Languages,
   Leaf,
   Mic,
   MousePointerClick,
   RotateCcw,
   ShieldCheck,
+  Volume2,
 } from "lucide-react";
 import {
   getAssessment,
@@ -194,26 +196,38 @@ function DisclaimerModal({
   onNo: () => void;
 }) {
   const c = DISCLAIMER[lang];
+  const readAloud = () => void speak(`${c.heading}. ${c.body}`, lang);
 
   // Read the disclaimer aloud automatically when it appears, and again whenever
   // the language is toggled. Stop any speech when the box is dismissed.
   useEffect(() => {
-    void speak(`${c.heading}. ${c.body}`, lang);
+    readAloud();
     return () => stopSpeaking();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lang]);
 
   return (
     <Modal>
-      <button
-        type="button"
-        onClick={onToggleLang}
-        aria-label="Toggle language"
-        title={lang === "en" ? "हिन्दी में सुनें" : "Listen in English"}
-        className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full border border-deep-green/25 bg-deep-green/5 text-[11px] font-bold text-deep-green transition hover:bg-deep-green/10"
-      >
-        {lang === "en" ? "हि" : "EN"}
-      </button>
+      <div className="absolute right-4 top-4 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={readAloud}
+          aria-label="Play the disclaimer aloud"
+          title="Hear it again"
+          className="grid h-9 w-9 place-items-center rounded-full border border-deep-green/25 bg-deep-green/5 text-deep-green transition hover:bg-deep-green/10"
+        >
+          <Volume2 className="h-4 w-4" />
+        </button>
+        <button
+          type="button"
+          onClick={onToggleLang}
+          aria-label="Toggle language"
+          title={lang === "en" ? "हिन्दी में सुनें" : "Listen in English"}
+          className="grid h-9 w-9 place-items-center rounded-full border border-deep-green/25 bg-deep-green/5 text-[11px] font-bold text-deep-green transition hover:bg-deep-green/10"
+        >
+          {lang === "en" ? "हि" : "EN"}
+        </button>
+      </div>
       <div className="flex flex-col items-center text-center">
         <span className="grid h-12 w-12 place-items-center rounded-full bg-deep-green/10 text-deep-green">
           <ShieldCheck className="h-6 w-6" />
@@ -277,6 +291,43 @@ function MethodModal({ lang, onPick }: { lang: Lang; onPick: (m: Mode) => void }
   );
 }
 
+function LanguageModal({ onPick }: { onPick: (l: Lang) => void }) {
+  const [sel, setSel] = useState<"" | Lang>("");
+  return (
+    <Modal>
+      <div className="flex flex-col items-center text-center">
+        <span className="grid h-12 w-12 place-items-center rounded-full bg-deep-green/10 text-deep-green">
+          <Languages className="h-6 w-6" />
+        </span>
+        <h2 className="mt-4 font-display text-2xl font-bold text-deep-green">Select the language</h2>
+        <div className="relative mt-5 w-full">
+          <select
+            aria-label="Select the language"
+            value={sel}
+            onChange={(e) => setSel(e.target.value as Lang)}
+            className="w-full appearance-none rounded-2xl border border-deep-green/20 bg-white px-4 py-3.5 pr-10 text-left text-deep-green outline-none transition focus:border-deep-green"
+          >
+            <option value="" disabled>
+              Choose a language…
+            </option>
+            <option value="en">English</option>
+            <option value="hi">हिन्दी (Hindi)</option>
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-deep-green/60" />
+        </div>
+        <button
+          type="button"
+          disabled={!sel}
+          onClick={() => sel && onPick(sel)}
+          className="mt-6 w-full rounded-full bg-deep-green px-5 py-3 text-sm font-semibold text-cream transition enabled:hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Continue
+        </button>
+      </div>
+    </Modal>
+  );
+}
+
 function Quiz({
   assessment,
   mode,
@@ -299,6 +350,9 @@ function Quiz({
   const [answers, setAnswers] = useState<(number | null)[]>(() => Array(total).fill(null));
   const [heard, setHeard] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+
+  // Stop any question read-aloud when the quiz unmounts.
+  useEffect(() => () => stopSpeaking(), []);
 
   const answeredCount = answers.filter((a) => a !== null).length;
   const isLast = idx + 1 >= total;
@@ -336,6 +390,7 @@ function Quiz({
 
   const next = () => {
     if (answers[idx] === null) return;
+    stopSpeaking();
     setHeard(null);
     if (isLast) {
       setDone(true);
@@ -416,8 +471,17 @@ function Quiz({
         ))}
       </div>
 
-      <div className="mt-4 rounded-3xl border border-deep-green/10 bg-[#faf9e8] p-6 sm:p-8">
-        <p className="text-lg font-semibold text-deep-green">
+      <div className="relative mt-4 rounded-3xl border border-deep-green/10 bg-[#faf9e8] p-6 sm:p-8">
+        <button
+          type="button"
+          onClick={() => void speak(questions[idx], lang)}
+          aria-label="Hear the question"
+          title="Hear the question"
+          className="absolute right-4 top-4 grid h-9 w-9 place-items-center rounded-full border border-deep-green/20 bg-white text-deep-green transition hover:bg-deep-green/10"
+        >
+          <Volume2 className="h-4 w-4" />
+        </button>
+        <p className="pr-12 text-lg font-semibold text-deep-green">
           {idx + 1}. {questions[idx]}
         </p>
         <div className="mt-5 space-y-3">
@@ -500,10 +564,12 @@ function AssessmentPage() {
   const { type } = Route.useParams();
   const assessment = getAssessment(type);
 
-  const [lang, setLang] = useState<Lang>("en");
+  // Language is chosen first (null until the user picks) in the Select Language box.
+  const [lang, setLang] = useState<Lang | null>(null);
   const [proceeded, setProceeded] = useState(false);
   const [store, setStore] = useState(true);
   const [mode, setMode] = useState<Mode | null>(null);
+  const displayLang: Lang = lang ?? "en";
 
   if (!assessment) {
     return (
@@ -530,24 +596,25 @@ function AssessmentPage() {
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="font-display text-3xl font-bold text-deep-green sm:text-4xl">
-              {assessment.title[lang]}
+              {assessment.title[displayLang]}
             </h1>
-            <p className="mt-2 max-w-3xl text-deep-green/70">{assessment.intro[lang]}</p>
+            <p className="mt-2 max-w-3xl text-deep-green/70">{assessment.intro[displayLang]}</p>
           </div>
-          <LangToggle lang={lang} onChange={setLang} />
+          {lang !== null && <LangToggle lang={lang} onChange={setLang} />}
         </div>
 
-        {proceeded && mode ? (
+        {lang !== null && proceeded && mode ? (
           <Quiz assessment={assessment} mode={mode} onModeChange={setMode} lang={lang} store={store} />
         ) : (
           <div className="mt-8 h-52 rounded-3xl border border-deep-green/10 bg-[#faf9e8]" />
         )}
       </main>
 
-      {!proceeded && (
+      {lang === null && <LanguageModal onPick={setLang} />}
+      {lang !== null && !proceeded && (
         <DisclaimerModal
           lang={lang}
-          onToggleLang={() => setLang((l) => (l === "en" ? "hi" : "en"))}
+          onToggleLang={() => setLang((l) => (l === "hi" ? "en" : "hi"))}
           onYes={() => {
             setStore(true);
             setProceeded(true);
@@ -559,7 +626,7 @@ function AssessmentPage() {
           }}
         />
       )}
-      {proceeded && !mode && <MethodModal lang={lang} onPick={setMode} />}
+      {lang !== null && proceeded && !mode && <MethodModal lang={lang} onPick={setMode} />}
     </div>
   );
 }
