@@ -217,16 +217,20 @@ export function getAssessment(slug: string): Assessment | undefined {
 // a whole spoken word. Includes the option name, "option N", and the number.
 const VOICE_HINTS: Record<Lang, string[][]> = {
   en: [
-    ["not at all", "not", "never", "none", "no", "nope", "zero", "nothing", "one", "first", "option 1", "option one", "1"],
-    ["several days", "several", "some", "sometimes", "few", "occasionally", "a little", "two", "second", "option 2", "option two", "2"],
-    ["more than half the days", "more than half", "often", "half", "frequently", "many", "three", "third", "option 3", "option three", "3"],
-    ["nearly every day", "every day", "everyday", "nearly", "always", "most days", "daily", "constantly", "all the time", "four", "fourth", "option 4", "option four", "4"],
+    // Option 1 — "Not at all". Number forms: one / won / first / 1.
+    ["not at all", "not", "never", "none", "no", "nope", "zero", "nothing", "one", "won", "first", "number one", "number 1", "option 1", "option one", "1"],
+    // Option 2 — "Several days". Number forms: two / to / too / second / 2.
+    ["several days", "several", "some", "sometimes", "few", "occasionally", "a little", "two", "to", "too", "second", "number two", "number 2", "option 2", "option two", "2"],
+    // Option 3 — "More than half the days". Number forms: three / tree / third / 3.
+    ["more than half the days", "more than half", "often", "half", "frequently", "many", "three", "tree", "third", "number three", "number 3", "option 3", "option three", "3"],
+    // Option 4 — "Nearly every day". Number forms: four / for / fore / fourth / 4.
+    ["nearly every day", "every day", "everyday", "nearly", "always", "most days", "daily", "constantly", "all the time", "four", "for", "fore", "fourth", "number four", "number 4", "option 4", "option four", "4"],
   ],
   hi: [
-    ["बिल्कुल नहीं", "बिल्कुल", "नहीं", "कभी नहीं", "एक", "पहला", "विकल्प एक", "विकल्प 1", "पहला विकल्प", "1"],
-    ["कुछ दिन", "कुछ", "कभी कभी", "थोड़ा", "दो", "दूसरा", "विकल्प दो", "विकल्प 2", "2"],
-    ["आधे से ज़्यादा दिन", "आधे से ज़्यादा", "आधे से ज्यादा", "आधे", "अक्सर", "तीन", "तीसरा", "विकल्प तीन", "विकल्प 3", "3"],
-    ["लगभग हर दिन", "हर दिन", "लगभग", "हमेशा", "रोज़", "रोज", "रोज़ाना", "चार", "चौथा", "विकल्प चार", "विकल्प 4", "4"],
+    ["बिल्कुल नहीं", "बिल्कुल", "नहीं", "कभी नहीं", "एक", "पहला", "पहला विकल्प", "नंबर एक", "विकल्प एक", "विकल्प 1", "१", "1"],
+    ["कुछ दिन", "कुछ", "कभी कभी", "थोड़ा", "दो", "दूसरा", "नंबर दो", "विकल्प दो", "विकल्प 2", "२", "2"],
+    ["आधे से ज़्यादा दिन", "आधे से ज़्यादा", "आधे से ज्यादा", "आधे", "अक्सर", "तीन", "तीसरा", "नंबर तीन", "विकल्प तीन", "विकल्प 3", "३", "3"],
+    ["लगभग हर दिन", "हर दिन", "लगभग", "हमेशा", "रोज़", "रोज", "रोज़ाना", "चार", "चौथा", "नंबर चार", "विकल्प चार", "विकल्प 4", "४", "4"],
   ],
 };
 
